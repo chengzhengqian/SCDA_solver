@@ -10,6 +10,78 @@ function cal(mop,name,info;num_step_to_gc=5000)
 end
 
 """
+we wrap into a function so it looks more concise
+for N=2,3.
+For N=4, we need to treat seperately
+"""
+function init_para(N_time_step_)
+    N_orbital=2
+    N_spin_orbital=2*N_orbital
+    N_time_step=N_time_step_
+    da=DA(N_spin_orbital,N_time_step)
+    input,input_args=initInputMultiBandSpinSymmetric(da)
+    ssatape=SSATape()
+    total_input_args=[input_args...,[Symbol("u$(i)") for i in 1:18]...]
+    setInputArgs(ssatape,total_input_args) #  this is important
+    uniopMap=initUniOpMap(input,ssatape)
+    calTree=[uniopMap,ssatape]      # to mimic the prevouis API
+    N_orbital,N_spin_orbital,N_time_step,da,input,input_args,total_input_args,ssatape,uniopMap,calTree
+end
+
+"""
+this relies on some global variables
+see the specific files
+call init_para 
+"""
+function cal_diff_with_G(O,target;num_step_to_gc=5000)
+    for k in 1:da.N
+        for l in 1:da.N
+            for orb_ in 1:N_orbital
+                tag="G_$(orb_)_$(k)_$(l)"
+                print("$(tag)\n")
+                idx_up=defaultSpatialIndex(orb_,1)
+                idx_down=defaultSpatialIndex(orb_,2)
+                n_orb_k_l_up=op(da,"dm",[idx_up,k,idx_up,l])
+                n_orb_k_l_dn=op(da,"dm",[idx_down,k,idx_down,l])
+                ∂O∂n_orb_k_l=opDiff(O,n_orb_k_l_up)+opDiff(O,n_orb_k_l_dn)
+                cal(∂O∂n_orb_k_l,"∂$(target)∂$(tag)",calTree;num_step_to_gc=num_step_to_gc)
+            end
+        end
+    end
+end
+
+"""
+generate the symbol
+simlarly, requires the default global name
+"""
+function gene_diff_name(target)
+    [ "∂$(target)∂G_$(orb)_$(i)_$(j)"  for orb in 1:N_orbital  for j in 1:da.N for i in 1:da.N]
+end
+
+"""
+useful to compute the component form
+"""
+function cal_component(O,name,proj_matrix)
+    N_terms=size(proj_matrix)[1]
+    for i in 1:N_terms
+        for j in 1:N_terms
+            cal(proj_matrix[i,j]*O,"$(name)_$(i)_$(j)",calTree)
+        end
+    end
+end
+
+"""
+get the component for for the symbol
+"""
+function component_symbol(sym)
+    [Symbol("$(sym)_$(i)_$(j)") for j in 1:N_terms for i in 1:N_terms]
+end
+
+
+
+
+
+"""
 X operator for a given orbital and time step
 """
 function x_ops(da,orb,t)
