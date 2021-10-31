@@ -13,6 +13,7 @@ end
 we wrap into a function so it looks more concise
 for N=2,3.
 For N=4, we need to treat seperately
+add the corresponding code for N=4
 """
 function init_para(N_time_step_)
     N_orbital=2
@@ -21,7 +22,13 @@ function init_para(N_time_step_)
     da=DA(N_spin_orbital,N_time_step)
     input,input_args=initInputMultiBandSpinSymmetric(da)
     ssatape=SSATape()
-    total_input_args=[input_args...,[Symbol("u$(i)") for i in 1:18]...]
+    if(N_time_step==2 || N_time_step==3)
+        total_input_args=[input_args...,[Symbol("u$(i)") for i in 1:18]...]
+    elseif(N_time_step==4)
+        total_input_args=[input_args...,[Symbol("u_$(tag)_$(i)")  for tag in 1:2 for i in 1:18]...]
+    else
+        error("N_time_step=$(N_time_step) is not supported")
+    end    
     setInputArgs(ssatape,total_input_args) #  this is important
     uniopMap=initUniOpMap(input,ssatape)
     calTree=[uniopMap,ssatape]      # to mimic the prevouis API
@@ -60,12 +67,13 @@ end
 
 """
 useful to compute the component form
+update keyword num_step_to_gc
 """
-function cal_component(O,name,proj_matrix)
+function cal_component(O,name,proj_matrix;num_step_to_gc=5000)
     N_terms=size(proj_matrix)[1]
     for i in 1:N_terms
         for j in 1:N_terms
-            cal(proj_matrix[i,j]*O,"$(name)_$(i)_$(j)",calTree)
+            cal(proj_matrix[i,j]*O,"$(name)_$(i)_$(j)",calTree;num_step_to_gc=num_step_to_gc)
         end
     end
 end
