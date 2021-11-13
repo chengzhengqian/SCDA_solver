@@ -72,10 +72,10 @@ func_no_diff_v3=SSACompiledFunc(ssatape,outputSyms)
 saveSSAFunc(func_no_diff_v3,"./gene/two_band_N_$(N_time_step)_spin_symmetric_no_diff_v3")
 func_no_diff_v3=loadSSAFunc("./gene/two_band_N_$(N_time_step)_spin_symmetric_no_diff_v3")
 
-cal_diff_with_G(p,"p",engine)
+cal_diff_with_G(p,"p",engine,num_step_to_gc=200000)
 
 for i in 1:length(nn)
-    cal_diff_with_G(p*nn[i],"nn_$(i)",engine)
+    cal_diff_with_G(p*nn[i],"nn_$(i)",engine,num_step_to_gc=200000)
 end
 
 for i in 1:da.N
@@ -84,7 +84,7 @@ for i in 1:da.N
             idx_up=defaultSpatialIndex(orb,1)
             idx_down=defaultSpatialIndex(orb,2)
             n_orb_i_j=0.5*(op(da,"dm",[idx_up,i,idx_up,j],engine(1.0))+op(da,"dm",[idx_down,i,idx_down,j],engine(1.0)))
-            cal_diff_with_G(p*n_orb_i_j,"g_$(orb)_$(i)_$(j)",engine)
+            cal_diff_with_G(p*n_orb_i_j,"g_$(orb)_$(i)_$(j)",engine,num_step_to_gc=200000)
         end
     end
 end
