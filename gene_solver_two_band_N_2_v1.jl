@@ -12,36 +12,26 @@
 
 using Wick
 using SymEngine
+using SSA
 using CZQUtils
-
+using MathExpr
 include("./gene_solver_two_band_common.jl")
 
 function proj_full(t)
     p_t=gene_P_full(t)
-    simplify(sum([symbols("u$(i)")*p_t[i] for i in 1:18]))
+    Wick.simplify(sum([symbols("u$(i)")*p_t[i] for i in 1:18]))
 end
 
+N_orbital,N_spin_orbital,N_time_step,da,input,input_args,total_input_args,ssatape,uniopMap,calTree=init_para(2)
 
 # for N=2
-N_orbital=2
-N_spin_orbital=2*N_orbital
-N_time_step=2
-da=DA(N_spin_orbital,N_time_step)
-
-
-input,input_args=initInputMultiBandSpinSymmetric(da)
-ssatape=SSATape()
-total_input_args=[input_args...,[Symbol("u$(i)") for i in 1:18]...]
-setInputArgs(ssatape,total_input_args) #  this is important
-uniopMap=initUniOpMap(input,ssatape)
-calTree=[uniopMap,ssatape]      # to mimic the prevouis API
 
 p=proj_full(1)*proj_full(2)
 nn=gene_nn(N_time_step)
 
 # the difference is that we first evaluate the coefficinet
-p=evalWick(p,ssatape)
-cal(p,"p",calTree)
+# p=evalWick(p,ssatape)
+@time cal(p,"p",calTree)      # first run 0.09522
 # cal(p,"p",calTree; num_step_to_gc=10) 
 # control the gc
 for i in 1:length(nn)
