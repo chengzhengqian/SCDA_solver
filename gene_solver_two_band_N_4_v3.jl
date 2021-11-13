@@ -48,6 +48,7 @@ p34=evalWick(p34,ssatape)
 
 p=p12*p34
 p=evalWick(p,ssatape)
+nn=gene_nn(N_time_step,engine)
 
 cal(p,"p",calTree,num_step_to_gc=80000)
 
