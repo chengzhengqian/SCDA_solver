@@ -6,7 +6,8 @@
 using Wick
 using SSA
 using MathExpr
-using JITFunc
+# using JITFunc
+# not necessary
 include("./gene_solver_two_band_common.jl")
 engine=ExprEngine()
 __default__engine__map__["default"]=engine
