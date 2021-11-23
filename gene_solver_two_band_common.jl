@@ -116,6 +116,7 @@ end
 """
 useful to compute the component form
 update keyword num_step_to_gc
+this should be  same for MathExpr.jl
 """
 function cal_component(O,name,proj_matrix;num_step_to_gc=5000)
     N_terms=size(proj_matrix)[1]

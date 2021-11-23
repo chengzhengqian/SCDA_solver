@@ -1,7 +1,7 @@
 # we first evaluate the coefficient only
 
 # ]activate "/home/chengzhengqian/share_workspace/czq_julia_package/Wick"
-
+# we add save function 
 # using Revise
 using Wick
 using SSA
@@ -46,6 +46,11 @@ for i in 1:da.N
 end
 
 outputSyms=Symbol.(["p",["nn_$(i)" for i in 1:4]..., ["g_$(orb)_$(i)_$(j)" for orb in 1:N_orbital  for j in 1:da.N for i in 1:da.N]...])
+
+# to generate the derivative to g, we only need to store the ssatape
+store_info=[ssatape,input_args,total_input_args,outputSyms]
+using Serialization
+serialize("./gene/store_info_two_band_N_$(N_time_step)_v3.jls",store_info)
 
 
 func_no_diff_v3=SSACompiledFunc(ssatape,outputSyms)

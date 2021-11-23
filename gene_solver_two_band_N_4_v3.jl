@@ -69,32 +69,41 @@ end
 
 outputSyms=Symbol.(["p",["nn_$(i)" for i in 1:4]..., ["g_$(orb)_$(i)_$(j)" for orb in 1:N_orbital  for j in 1:da.N for i in 1:da.N]...])
 
+# save ssatape
+store_info=[ssatape,input_args,total_input_args,outputSyms]
+using Serialization
+serialize("./gene/store_info_two_band_N_$(N_time_step)_v3.jls",store_info)
+
+
 func_no_diff_v3=SSACompiledFunc(ssatape,outputSyms)
 saveSSAFunc(func_no_diff_v3,"./gene/two_band_N_$(N_time_step)_spin_symmetric_no_diff_v3")
 func_no_diff_v3=loadSSAFunc("./gene/two_band_N_$(N_time_step)_spin_symmetric_no_diff_v3")
 
-cal_diff_with_G(p,"p",engine,num_step_to_gc=200000)
 
-for i in 1:length(nn)
-    cal_diff_with_G(p*nn[i],"nn_$(i)",engine,num_step_to_gc=200000)
-end
+# we use ssatape to diff the code
+# cal_diff_with_G(p,"p",engine,num_step_to_gc=200000)
 
-for i in 1:da.N
-    for j in 1:da.N
-        for orb in 1:N_orbital
-            idx_up=defaultSpatialIndex(orb,1)
-            idx_down=defaultSpatialIndex(orb,2)
-            n_orb_i_j=0.5*(op(da,"dm",[idx_up,i,idx_up,j],engine(1.0))+op(da,"dm",[idx_down,i,idx_down,j],engine(1.0)))
-            cal_diff_with_G(p*n_orb_i_j,"g_$(orb)_$(i)_$(j)",engine,num_step_to_gc=200000)
-        end
-    end
-end
+# for i in 1:length(nn)
+#     cal_diff_with_G(p*nn[i],"nn_$(i)",engine,num_step_to_gc=200000)
+# end
 
-outputSymsDiff=Symbol.([gene_diff_name("p")...,vcat([gene_diff_name("nn_$(i)") for i in 1:4]...)...,  vcat([gene_diff_name("g_$(orb)_$(i)_$(j)") for orb in 1:N_orbital  for j in 1:da.N for i in 1:da.N]...)...])
-outputSymsWithDiff=[outputSyms...,outputSymsDiff...]
+# for i in 1:da.N
+#     for j in 1:da.N
+#         for orb in 1:N_orbital
+#             idx_up=defaultSpatialIndex(orb,1)
+#             idx_down=defaultSpatialIndex(orb,2)
+#             n_orb_i_j=0.5*(op(da,"dm",[idx_up,i,idx_up,j],engine(1.0))+op(da,"dm",[idx_down,i,idx_down,j],engine(1.0)))
+#             cal_diff_with_G(p*n_orb_i_j,"g_$(orb)_$(i)_$(j)",engine,num_step_to_gc=200000)
+#         end
+#     end
+# end
 
-func_with_diff_v3=SSACompiledFunc(ssatape,outputSymsWithDiff)
-saveSSAFunc(func_with_diff_v3,"./gene/two_band_N_$(N_time_step)_spin_symmetric_with_diff_v3")
-func_with_diff_v3=loadSSAFunc("./gene/two_band_N_$(N_time_step)_spin_symmetric_with_diff_v3")
+
+# outputSymsDiff=Symbol.([gene_diff_name("p")...,vcat([gene_diff_name("nn_$(i)") for i in 1:4]...)...,  vcat([gene_diff_name("g_$(orb)_$(i)_$(j)") for orb in 1:N_orbital  for j in 1:da.N for i in 1:da.N]...)...])
+# outputSymsWithDiff=[outputSyms...,outputSymsDiff...]
+
+# func_with_diff_v3=SSACompiledFunc(ssatape,outputSymsWithDiff)
+# saveSSAFunc(func_with_diff_v3,"./gene/two_band_N_$(N_time_step)_spin_symmetric_with_diff_v3")
+# func_with_diff_v3=loadSSAFunc("./gene/two_band_N_$(N_time_step)_spin_symmetric_with_diff_v3")
 
 

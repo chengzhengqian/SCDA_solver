@@ -1,10 +1,11 @@
+# update form N_2_v2
+# for N=3
 # we use the new symbolic solver
 # we first enter the development mode
 # ]activate "/home/chengzhengqian/share_workspace/czq_julia_package/Wick"
 # we add convert in MathExpr.jl, check it now
-# now we add the save the SSAtape and generate with the new diff library
 # using Revise
-
+# we save the store info
 using Wick
 using SSA
 using MathExpr
@@ -20,14 +21,15 @@ function proj_full(t,engine::ExprEngine)
 end
 
 # the calTree,uniopMap, need to update, we first use as it right now, 
-N_orbital,N_spin_orbital,N_time_step,da,input,input_args,total_input_args,ssatape,uniopMap,termMap,calTree=init_para(2,engine)
+N_orbital,N_spin_orbital,N_time_step,da,input,input_args,total_input_args,ssatape,uniopMap,termMap,calTree=init_para(3,engine)
 
 # uniopMap=initUniOpMap(input,ssatape)
 
 p=proj_full(1,engine)*proj_full(2,engine)
+p=evalWick(p,ssatape)
 nn=gene_nn(N_time_step,engine)
 
-@time cal(p,"p",calTree)        # first run 0.078836
+cal(p,"p",calTree)        # first run 0.078836
 
 for i in 1:length(nn)
     cal(p*nn[i],"nn_$(i)",calTree)
@@ -46,13 +48,19 @@ end
 
 outputSyms=Symbol.(["p",["nn_$(i)" for i in 1:4]..., ["g_$(orb)_$(i)_$(j)" for orb in 1:N_orbital  for j in 1:da.N for i in 1:da.N]...])
 
+# save ssatape
+store_info=[ssatape,input_args,total_input_args,outputSyms]
+using Serialization
+serialize("./gene/store_info_two_band_N_$(N_time_step)_v3.jls",store_info)
+
+
 func_no_diff_v2=SSACompiledFunc(ssatape,outputSyms)
 saveSSAFunc(func_no_diff_v2,"./gene/two_band_N_$(N_time_step)_spin_symmetric_no_diff_v2")
 func_no_diff_v2=loadSSAFunc("./gene/two_band_N_$(N_time_step)_spin_symmetric_no_diff_v2")
 func_no_diff=loadSSAFunc("./gene/two_band_N_$(N_time_step)_spin_symmetric_no_diff")
 
-test_input=rand(26)
-func_no_diff_v2(test_input...)-func_no_diff(test_input...)
+test_input=rand(36)
+sum(abs.(func_no_diff_v2(test_input...)-func_no_diff(test_input...)))
 
 # typeof(p)
 cal_diff_with_G(p,"p",engine)
@@ -82,8 +90,9 @@ func_with_diff_v2=loadSSAFunc("./gene/two_band_N_$(N_time_step)_spin_symmetric_w
 
 func_with_diff=loadSSAFunc("./gene/two_band_N_$(N_time_step)_spin_symmetric_with_diff")
 
-test_input=rand(26)
+test_input=rand(36)
 @time result_1=func_with_diff(test_input...)
 @time result_2=func_with_diff_v2(test_input...)
 sum(abs.(result_1-result_2))
+
 
